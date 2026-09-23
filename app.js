@@ -367,6 +367,12 @@ function renderVerses(texts) {
   passage.replaceChildren();
   texts.forEach((text, index) => {
     const number = index + FIRST_VERSE;
+    if (index % 4 === 0) {
+      const heading = document.createElement('h2');
+      heading.className = 'aliyah-heading';
+      heading.textContent = `Aliyah ${index / 4 + 1}`;
+      passage.append(heading);
+    }
     const row = document.createElement('div');
     row.className = 'verse-row';
     row.dir = 'rtl';
@@ -438,12 +444,6 @@ function renderVerses(texts) {
 
     row.append(button, words);
     passage.append(row);
-    if ((index + 1) % 4 === 0) {
-      const heading = document.createElement('h2');
-      heading.className = 'aliyah-heading';
-      heading.textContent = `Aliya ${(index + 1) / 4}`;
-      passage.append(heading);
-    }
   });
 }
 
