@@ -249,6 +249,10 @@ h1 { margin: 0 0 18px; font-size: clamp(1.35rem, 3vw, 2rem); font-weight: 400; }
   font: 600 .34em/1 Arial, sans-serif;
 }
 
+/* Temporarily hide the optional audio controls. */
+.audio-toggle,
+.group-audio-controls { display: none; }
+
 .group-audio-button:hover { color: white; background: var(--green); border-color: var(--green); }
 .group-audio-button.record-group { color: #a43f32; }
 .group-audio-button.recording { color: white; background: #a43f32; border-color: #a43f32; animation: recording-pulse 1.2s infinite; }
