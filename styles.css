@@ -196,6 +196,7 @@ h1 { margin: 0 0 18px; font-size: clamp(1.35rem, 3vw, 2rem); font-weight: 400; }
 }
 
 .verse-number {
+  direction: ltr;
   flex: 0 0 auto;
   border: 0;
   border-radius: 999px;
