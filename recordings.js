@@ -44,13 +44,15 @@
   async function save(item) {
     const audio = await base64(item.blob);
     // An upsert makes retrying safe if a successful response was lost.
-    const response = await fetch(`${endpoint}?on_conflict=id`, {
+    const response = await fetch(`${endpoint}?on_conflict=id&select=id`, {
       method: 'POST',
-      headers: supabaseHeaders({ 'x-recording-id': item.id, Prefer: 'resolution=merge-duplicates' }),
+      headers: supabaseHeaders({ 'x-recording-id': item.id, Prefer: 'resolution=merge-duplicates,return=representation' }),
       body: JSON.stringify({ id: item.id, name: item.name, start_time: item.start,
         mime_type: item.blob.type.split(';')[0], audio_base64: audio })
     });
     if (!response.ok) throw new Error('Save failed');
+    const [saved] = await response.json();
+    if (saved?.id !== item.id) throw new Error('Save was not confirmed');
     item.saved = true;
   }
 
