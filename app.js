@@ -12,7 +12,6 @@ const RECORDING_BUCKET = 'vivienne-torah-group-recordings-v1';
 const PASSAGE_KEY = 'deuteronomy-8-11-20-9-1-10';
 const FIRST_VERSE = 1;
 const FIRST_RECORDABLE_VERSE = 3; // 8:13
-const UNHIGHLIGHTED_VERSE = 4; // 8:14
 const verseRef = number => number <= 10 ? `8:${number + 10}` : `9:${number - 10}`;
 const FALLBACK_VERSES = [
   "הִשָּׁ֣מֶר לְךָ֔ פֶּן־תִּשְׁכַּ֖ח אֶת־יְהֹוָ֣ה אֱלֹהֶ֑יךָ לְבִלְתִּ֨י שְׁמֹ֤ר מִצְוֺתָיו֙ וּמִשְׁפָּטָ֣יו וְחֻקֹּתָ֔יו אֲשֶׁ֛ר אָנֹכִ֥י מְצַוְּךָ֖ הַיּֽוֹם׃",
@@ -102,7 +101,6 @@ function supabaseHeaders(extra = {}) {
 }
 
 function highlightForWord(verse, wordIndex) {
-  if (verse === UNHIGHLIGHTED_VERSE) return undefined;
   return highlights.find(item => item.verse === verse && wordIndex >= item.start && wordIndex <= item.end);
 }
 
@@ -720,7 +718,6 @@ passage.addEventListener('mouseup', async () => {
   }
 
   const verse = Number(line.dataset.verse);
-  if (verse === UNHIGHLIGHTED_VERSE) return;
   const indices = selectedWords.map(word => Number(word.dataset.word));
   const start = Math.min(...indices);
   const end = Math.max(...indices);
