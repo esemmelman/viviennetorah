@@ -72,17 +72,27 @@ body::before {
   letter-spacing: .22em;
 }
 
-h1 { margin: 0 0 18px; font-size: clamp(1.35rem, 3vw, 2rem); font-weight: 400; }
+.passage-heading {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+}
+
+.passage-heading h1 {
+  max-width: calc(100% - 10rem);
+  margin: 0;
+  font-size: clamp(1rem, 2.2vw, 1.5rem);
+  font-weight: 400;
+}
 
 .display-controls {
   display: flex;
-  justify-content: flex-end;
   gap: 10px;
-  margin: 0;
-  padding-bottom: 18px;
 }
 
-.display-controls-spacer { flex: 1; }
+.audio-controls { padding: 10px 0 18px; text-align: left; }
 
 .audio-toggle {
   display: inline-flex;
@@ -322,12 +332,11 @@ select { margin-left: 6px; padding: 8px 12px; }
 }
 
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
-.record-controls { margin: 0 auto 16px; }
 #record-button { padding: 10px 30px; border: 0; border-radius: 24px; background: var(--green); color: white; font: 600 1rem Arial, sans-serif; cursor: pointer; }
 #record-button[aria-pressed="true"] { background: #a63232; }
 #record-button:disabled { opacity: .6; cursor: wait; }
 #record-status { margin: 10px 0 0; min-height: 1.4em; color: var(--muted); font: .9rem Arial, sans-serif; }
-#record-button[aria-pressed="true"] + #record-status { display: none; }
+.passage-heading:has(#record-button[aria-pressed="true"]) + #record-status { display: none; }
 .recordings-card { margin: 24px 0; padding: 20px; background: var(--paper); border: 1px solid #d9c9a8; border-radius: 12px; }
 .recordings-card h2 { margin-top: 0; font-weight: 400; }
 .recordings-card p { color: var(--muted); font-size: .85rem; }

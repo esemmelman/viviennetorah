@@ -8,27 +8,28 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=1.0.28">
+  <link rel="stylesheet" href="styles.css?v=1.0.29">
 </head>
 <body>
   <main class="page">
     <header class="page-header">
       <p class="eyebrow">דְּבָרִים · DEUTERONOMY</p>
-      <h1>Chapter 8, verses 11–20 &amp; Chapter 9, verses 1–10</h1>
-      <div class="record-controls">
+      <div class="passage-heading">
         <button id="record-button" type="button" aria-pressed="false" disabled>Record</button>
-        <p id="record-status" role="status"></p>
+        <h1>Chapter 8, verses 11–20 &amp; Chapter 9, verses 1–10</h1>
+        <div class="display-controls" role="group" aria-label="Display options">
+          <button class="display-toggle active" id="trope-toggle" type="button" aria-pressed="true">Trope</button>
+          <button class="display-toggle" id="script-toggle" type="button" aria-pressed="false">Script</button>
+        </div>
       </div>
+      <p id="record-status" role="status"></p>
 
-      <div class="display-controls" aria-label="Display options">
+      <div class="audio-controls">
         <label class="audio-toggle" for="audio-toggle">
           <span>Audio</span>
           <input id="audio-toggle" type="checkbox" checked>
           <span class="audio-toggle-track" aria-hidden="true"></span>
         </label>
-        <span class="display-controls-spacer" aria-hidden="true"></span>
-        <button class="display-toggle active" id="trope-toggle" type="button" aria-pressed="true">Trope</button>
-        <button class="display-toggle" id="script-toggle" type="button" aria-pressed="false">Script</button>
       </div>
     </header>
 
