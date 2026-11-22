@@ -89,10 +89,12 @@ body::before {
 
 .display-controls {
   display: flex;
+  flex: none;
+  max-width: 100%;
+  justify-content: center;
+  flex-wrap: wrap;
   gap: 10px;
 }
-
-.audio-controls { padding: 10px 0 18px; text-align: left; }
 
 .audio-toggle {
   display: inline-flex;
@@ -220,6 +222,7 @@ body::before {
 .verse-number:hover, .verse-number.playing { color: white; background: var(--green); }
 .verse-number:focus-visible { outline: 3px solid rgba(54,90,71,.4); outline-offset: 3px; }
 .verse-number:disabled { opacity: .55; cursor: wait; }
+.verse-actions { display: inline-flex; align-items: center; flex: 0 0 auto; gap: .1em; }
 .verse-line { unicode-bidi: isolate; }
 .word {
   border-radius: .12em;
@@ -259,10 +262,10 @@ body::before {
   font: 600 .34em/1 Arial, sans-serif;
 }
 
-/* Temporarily hide the optional audio controls. */
-.audio-toggle,
 .group-audio-controls { display: none; }
 
+.group-audio-button.verse-record { color: #a43f32; font-size: .5em; }
+.group-audio-button.verse-record:hover { color: white; }
 .group-audio-button:hover { color: white; background: var(--green); border-color: var(--green); }
 .group-audio-button.record-group { color: #a43f32; }
 .group-audio-button.recording { color: white; background: #a43f32; border-color: #a43f32; animation: recording-pulse 1.2s infinite; }
@@ -327,6 +330,7 @@ select { margin-left: 6px; padding: 8px 12px; }
 @media (max-width: 560px) {
   .page { padding-top: 38px; }
   .page-header { margin-top: -38px; padding-top: 28px; }
+  .display-toggle { min-width: 68px; padding-inline: 10px; }
   .verse-text { line-height: 1.8; }
   .controls { flex-direction: column; gap: 10px; }
 }

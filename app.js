@@ -11,6 +11,8 @@ const RECORDING_TABLE = 'vivienne_torah_group_recordings_v1';
 const RECORDING_BUCKET = 'vivienne-torah-group-recordings-v1';
 const PASSAGE_KEY = 'deuteronomy-8-11-20-9-1-10';
 const FIRST_VERSE = 1;
+const FIRST_RECORDABLE_VERSE = 3; // 8:13
+const UNHIGHLIGHTED_VERSE = 4; // 8:14
 const verseRef = number => number <= 10 ? `8:${number + 10}` : `9:${number - 10}`;
 const FALLBACK_VERSES = [
   "הִשָּׁ֣מֶר לְךָ֔ פֶּן־תִּשְׁכַּ֖ח אֶת־יְהֹוָ֣ה אֱלֹהֶ֑יךָ לְבִלְתִּ֨י שְׁמֹ֤ר מִצְוֺתָיו֙ וּמִשְׁפָּטָ֣יו וְחֻקֹּתָ֔יו אֲשֶׁ֛ר אָנֹכִ֥י מְצַוְּךָ֖ הַיּֽוֹם׃",
@@ -50,6 +52,7 @@ let activeRecorder = null;
 let playbackAudioContext = null;
 let hoveredGroupAudio = null;
 let hoveredGroupId = null;
+let activeGroupPlayback = null;
 function findRecording(value, verseNumber) {
   const candidates = [];
 
@@ -99,6 +102,7 @@ function supabaseHeaders(extra = {}) {
 }
 
 function highlightForWord(verse, wordIndex) {
+  if (verse === UNHIGHLIGHTED_VERSE) return undefined;
   return highlights.find(item => item.verse === verse && wordIndex >= item.start && wordIndex <= item.end);
 }
 
@@ -288,20 +292,35 @@ async function toggleGroupRecording(button) {
   }
 }
 
+function stopGroupPlayback() {
+  if (!activeGroupPlayback) return;
+  const { audio, button } = activeGroupPlayback;
+  activeGroupPlayback = null;
+  audio.pause();
+  button.disabled = !audioEnabled;
+}
+
 function playGroupRecording(button) {
-  if (window.passageRecordingBusy) return;
-  stopRecordedVerse();
+  if (!audioEnabled || window.passageRecordingBusy) return;
   const groupId = Number(button.dataset.groupId);
   const recording = recordings.get(groupId);
   if (!recording) return;
-  const audio = new Audio(`${recordingUrl(recording.object_path)}?v=${Date.now()}`);
+  stopRecordedVerse();
+  stopHoveredGroup();
+  stopGroupPlayback();
+  const audio = new Audio(currentRecordingUrl(recording));
+  activeGroupPlayback = { audio, button };
   button.disabled = true;
-  audio.onended = () => { button.disabled = false; };
-  audio.onerror = () => {
-    button.disabled = false;
+  audio.onended = () => {
+    if (activeGroupPlayback?.audio === audio) stopGroupPlayback();
+  };
+  const playFailed = () => {
+    if (activeGroupPlayback?.audio !== audio) return;
+    stopGroupPlayback();
     status.textContent = 'The saved group recording could not be played.';
   };
-  audio.play();
+  audio.onerror = playFailed;
+  audio.play().catch(playFailed);
   status.textContent = `Playing recording for group ${groupId}.`;
 }
 
@@ -319,6 +338,7 @@ function playHoveredGroup(groupId) {
   if (window.passageRecordingBusy) return;
   if (!audioEnabled) return;
   if (hoveredGroupId === groupId) return;
+  if (activeGroupPlayback) return;
   stopRecordedVerse();
   stopHoveredGroup();
   const recording = recordings.get(groupId);
@@ -353,13 +373,11 @@ function displayText(text) {
 }
 
 function updateDisplay() {
-  if (scriptMode && audioEnabled) setAudioEnabled(false);
   document.body.classList.toggle('script-mode', scriptMode);
   tropeToggle.classList.toggle('active', showTrope);
   tropeToggle.setAttribute('aria-pressed', String(showTrope));
   scriptToggle.classList.toggle('active', scriptMode);
   scriptToggle.setAttribute('aria-pressed', String(scriptMode));
-  audioToggle.disabled = scriptMode;
   renderVerses(sourceVerses);
 }
 
@@ -382,7 +400,21 @@ function renderVerses(texts) {
     button.type = 'button';
     button.textContent = verseRef(number);
     button.dataset.verse = number;
+    button.disabled = !audioEnabled;
     button.setAttribute('aria-label', `Play all saved group recordings for verse ${verseRef(number)}`);
+    const actions = document.createElement('span');
+    actions.className = 'verse-actions';
+    actions.append(button);
+    if (number >= FIRST_RECORDABLE_VERSE && navigator.mediaDevices?.getUserMedia && window.MediaRecorder) {
+      const record = document.createElement('button');
+      record.type = 'button';
+      record.className = 'group-audio-button verse-record';
+      record.dataset.verse = number;
+      record.textContent = '●';
+      record.title = `Record verse ${verseRef(number)}`;
+      record.setAttribute('aria-label', record.title);
+      actions.append(record);
+    }
 
     const words = document.createElement('span');
     words.className = 'verse-line';
@@ -431,6 +463,7 @@ function renderVerses(texts) {
         if (recordings.has(highlight.id)) {
           const playButton = document.createElement('button');
           playButton.type = 'button';
+          playButton.disabled = !audioEnabled;
           playButton.className = 'group-audio-button play-group';
           playButton.dataset.groupId = highlight.id;
           playButton.textContent = '▶';
@@ -442,7 +475,7 @@ function renderVerses(texts) {
       }
     });
 
-    row.append(button, words);
+    row.append(actions, words);
     passage.append(row);
   });
 }
@@ -511,6 +544,7 @@ async function prepareGroupAudio(group, audioContext) {
 }
 
 async function playRecordedVerse(button) {
+  if (!audioEnabled || window.passageRecordingBusy) return;
   const number = Number(button.dataset.verse);
   if (activePlaylist?.number === number) {
     stopRecordedVerse(`Verse ${verseRef(number)} playback stopped.`);
@@ -518,6 +552,7 @@ async function playRecordedVerse(button) {
   }
 
   stopRecordedVerse();
+  stopGroupPlayback();
   stopHoveredGroup();
   resetActiveVerse();
   const groups = highlights
@@ -685,6 +720,7 @@ passage.addEventListener('mouseup', async () => {
   }
 
   const verse = Number(line.dataset.verse);
+  if (verse === UNHIGHLIGHTED_VERSE) return;
   const indices = selectedWords.map(word => Number(word.dataset.word));
   const start = Math.min(...indices);
   const end = Math.max(...indices);
@@ -741,20 +777,28 @@ function setAudioEnabled(enabled) {
   audioEnabled = enabled;
   audioToggle.checked = enabled;
   if (!enabled) {
+    stopGroupPlayback();
     stopHoveredGroup();
     stopRecordedVerse();
     resetActiveVerse();
+  }
+  passage.querySelectorAll('.verse-number, .play-group').forEach(button => {
+    button.disabled = !enabled;
+  });
+  const currentAudio = document.querySelector('#recordings-list audio');
+  if (currentAudio) {
+    currentAudio.controls = enabled;
+    if (!enabled) currentAudio.pause();
   }
 }
 
 scriptToggle.addEventListener('click', () => {
   scriptMode = !scriptMode;
-  if (scriptMode) setAudioEnabled(false);
   updateDisplay();
 });
 
 audioToggle.addEventListener('change', () => {
-  setAudioEnabled(scriptMode ? false : audioToggle.checked);
+  setAudioEnabled(audioToggle.checked);
 });
 
 updateDisplay();
