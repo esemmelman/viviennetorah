@@ -11,7 +11,7 @@ const RECORDING_TABLE = 'vivienne_torah_group_recordings_v1';
 const RECORDING_BUCKET = 'vivienne-torah-group-recordings-v1';
 const PASSAGE_KEY = 'deuteronomy-8-11-20-9-1-10';
 const FIRST_VERSE = 1;
-const FIRST_RECORDABLE_VERSE = 3; // 8:13
+const FIRST_PHRASE_RECORDING_VERSE = 4; // 8:14
 const verseRef = number => number <= 10 ? `8:${number + 10}` : `9:${number - 10}`;
 const FALLBACK_VERSES = [
   "הִשָּׁ֣מֶר לְךָ֔ פֶּן־תִּשְׁכַּ֖ח אֶת־יְהֹוָ֣ה אֱלֹהֶ֑יךָ לְבִלְתִּ֨י שְׁמֹ֤ר מִצְוֺתָיו֙ וּמִשְׁפָּטָ֣יו וְחֻקֹּתָ֔יו אֲשֶׁ֛ר אָנֹכִ֥י מְצַוְּךָ֖ הַיּֽוֹם׃",
@@ -225,7 +225,7 @@ async function toggleGroupRecording(button) {
       status.textContent = 'Stop the current recording before starting another group.';
       return;
     }
-    activeRecorder.recorder.stop();
+    if (activeRecorder.recorder?.state === 'recording') activeRecorder.recorder.stop();
     return;
   }
 
@@ -234,8 +234,9 @@ async function toggleGroupRecording(button) {
     return;
   }
 
+  activeRecorder = { groupId, recorder: null };
+  let stream;
   try {
-    let stream;
     try {
       stream = await navigator.mediaDevices.getUserMedia({
         audio: {
@@ -279,13 +280,18 @@ async function toggleGroupRecording(button) {
         updateDisplay();
       }
     };
-    activeRecorder = { groupId, recorder };
+    stopGroupPlayback();
+    stopRecordedVerse();
+    stopHoveredGroup();
+    resetActiveVerse();
     recorder.start(1000);
-    button.classList.add('recording');
-    button.textContent = '■';
-    button.setAttribute('aria-label', `Stop recording group ${groupId}`);
+    activeRecorder.recorder = recorder;
+    updateDisplay();
     status.textContent = `Recording group ${groupId} in high quality. Select stop when finished.`;
   } catch (error) {
+    stream?.getTracks().forEach(track => track.stop());
+    activeRecorder = null;
+    updateDisplay();
     status.textContent = 'Microphone access is required to record this group.';
   }
 }
@@ -299,7 +305,7 @@ function stopGroupPlayback() {
 }
 
 function playGroupRecording(button) {
-  if (!audioEnabled || window.passageRecordingBusy) return;
+  if (!audioEnabled || activeRecorder || window.passageRecordingBusy) return;
   const groupId = Number(button.dataset.groupId);
   const recording = recordings.get(groupId);
   if (!recording) return;
@@ -333,7 +339,7 @@ function stopHoveredGroup() {
 }
 
 function playHoveredGroup(groupId) {
-  if (window.passageRecordingBusy) return;
+  if (activeRecorder || window.passageRecordingBusy) return;
   if (!audioEnabled) return;
   if (hoveredGroupId === groupId) return;
   if (activeGroupPlayback) return;
@@ -400,19 +406,6 @@ function renderVerses(texts) {
     button.dataset.verse = number;
     button.disabled = !audioEnabled;
     button.setAttribute('aria-label', `Play all saved group recordings for verse ${verseRef(number)}`);
-    const actions = document.createElement('span');
-    actions.className = 'verse-actions';
-    actions.append(button);
-    if (number >= FIRST_RECORDABLE_VERSE && navigator.mediaDevices?.getUserMedia && window.MediaRecorder) {
-      const record = document.createElement('button');
-      record.type = 'button';
-      record.className = 'group-audio-button verse-record';
-      record.dataset.verse = number;
-      record.textContent = '●';
-      record.title = `Record verse ${verseRef(number)}`;
-      record.setAttribute('aria-label', record.title);
-      actions.append(record);
-    }
 
     const words = document.createElement('span');
     words.className = 'verse-line';
@@ -445,7 +438,8 @@ function renderVerses(texts) {
         words.append(space);
       }
 
-      if (!scriptMode && highlight && wordIndex === highlight.end) {
+      if (highlight && wordIndex === highlight.end && number >= FIRST_PHRASE_RECORDING_VERSE
+          && (!scriptMode || activeRecorder?.groupId === highlight.id)) {
         const controls = document.createElement('span');
         controls.className = 'group-audio-controls';
 
@@ -453,9 +447,13 @@ function renderVerses(texts) {
         recordButton.type = 'button';
         recordButton.className = 'group-audio-button record-group';
         recordButton.dataset.groupId = highlight.id;
-        recordButton.textContent = '●';
-        recordButton.setAttribute('aria-label', `${recordings.has(highlight.id) ? 'Re-record' : 'Record'} highlighted group ${highlight.id}`);
-        recordButton.title = recordings.has(highlight.id) ? 'Re-record this group' : 'Record this group';
+        const recording = activeRecorder?.groupId === highlight.id;
+        const action = recording ? 'Stop recording' : recordings.has(highlight.id) ? 'Re-record' : 'Record';
+        recordButton.classList.toggle('recording', recording);
+        recordButton.disabled = recording && activeRecorder.recorder?.state !== 'recording';
+        recordButton.textContent = recording ? (recordButton.disabled ? '↑' : '■') : '●';
+        recordButton.title = `${action} phrase in verse ${verseRef(number)}`;
+        recordButton.setAttribute('aria-label', recordButton.title);
         controls.append(recordButton);
 
         if (recordings.has(highlight.id)) {
@@ -473,7 +471,7 @@ function renderVerses(texts) {
       }
     });
 
-    row.append(actions, words);
+    row.append(button, words);
     passage.append(row);
   });
 }
@@ -542,7 +540,7 @@ async function prepareGroupAudio(group, audioContext) {
 }
 
 async function playRecordedVerse(button) {
-  if (!audioEnabled || window.passageRecordingBusy) return;
+  if (!audioEnabled || activeRecorder || window.passageRecordingBusy) return;
   const number = Number(button.dataset.verse);
   if (activePlaylist?.number === number) {
     stopRecordedVerse(`Verse ${verseRef(number)} playback stopped.`);
@@ -692,7 +690,7 @@ passage.addEventListener('mouseout', event => {
 });
 
 passage.addEventListener('mouseup', async () => {
-  if (scriptMode) return;
+  if (scriptMode || activeRecorder) return;
   if (!highlightsReady) {
     status.textContent = 'Please wait for saved highlights to finish loading.';
     return;

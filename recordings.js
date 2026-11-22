@@ -61,7 +61,7 @@
     const row = document.createElement('tr');
     const cells = Array.from({ length: 4 }, () => row.appendChild(document.createElement('td')));
     const name = document.createElement('span');
-    name.textContent = item.verse ? `Vivienne · ${verseRef(item.verse)}` : 'Vivienne';
+    name.textContent = 'Vivienne';
     cells[0].append(name);
     cells[1].textContent = new Date(item.start).toLocaleString('en-US', {
       timeZone: 'America/Los_Angeles', timeZoneName: 'short'
@@ -125,7 +125,7 @@
     }
   }
 
-  async function recordVerse(verse = null) {
+  button.onclick = async () => {
     if (recorder?.state === 'recording') { stop(); return; }
     if (busy) return;
     if (activeRecorder) {
@@ -146,7 +146,7 @@
       const capture = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
       recorder = capture;
       const chunks = [];
-      const item = { id: crypto.randomUUID(), name: 'Vivienne', verse, start: new Date().toISOString(), saved: false };
+      const item = { id: crypto.randomUUID(), name: 'Vivienne', start: new Date().toISOString(), saved: false };
       let failed = false;
       capture.ondataavailable = event => { if (event.data.size) chunks.push(event.data); };
       capture.onerror = () => { failed = true; stop(); };
@@ -183,7 +183,7 @@
       stopGroupPlayback();
       capture.start(1000);
       forgetCurrent();
-      button.textContent = verse ? `Stop ${verseRef(verse)}` : 'Stop recording';
+      button.textContent = 'Stop recording';
       button.setAttribute('aria-pressed', 'true');
       button.disabled = false;
       const started = Date.now();
@@ -202,13 +202,7 @@
       button.disabled = false;
       message.textContent = 'Microphone access is required. Allow access and try again.';
     }
-  }
-
-  button.onclick = () => recordVerse();
-  passage.addEventListener('click', event => {
-    const record = event.target.closest('.verse-record');
-    if (record && !busy) recordVerse(Number(record.dataset.verse));
-  });
+  };
   window.addEventListener('beforeunload', event => {
     if (busy || (current && !current.saved)) { event.preventDefault(); event.returnValue = ''; }
   });

@@ -222,7 +222,6 @@ body::before {
 .verse-number:hover, .verse-number.playing { color: white; background: var(--green); }
 .verse-number:focus-visible { outline: 3px solid rgba(54,90,71,.4); outline-offset: 3px; }
 .verse-number:disabled { opacity: .55; cursor: wait; }
-.verse-actions { display: inline-flex; align-items: center; flex: 0 0 auto; gap: .1em; }
 .verse-line { unicode-bidi: isolate; }
 .word {
   border-radius: .12em;
@@ -262,10 +261,6 @@ body::before {
   font: 600 .34em/1 Arial, sans-serif;
 }
 
-.group-audio-controls { display: none; }
-
-.group-audio-button.verse-record { color: #a43f32; font-size: .5em; }
-.group-audio-button.verse-record:hover { color: white; }
 .group-audio-button:hover { color: white; background: var(--green); border-color: var(--green); }
 .group-audio-button.record-group { color: #a43f32; }
 .group-audio-button.recording { color: white; background: #a43f32; border-color: #a43f32; animation: recording-pulse 1.2s infinite; }
