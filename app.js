@@ -47,7 +47,6 @@ const recordings = new Map();
 let playbackAudioContext = null;
 let hoveredGroupAudio = null;
 let hoveredGroupId = null;
-let activeGroupPlayback = null;
 function findRecording(value, verseNumber) {
   const candidates = [];
 
@@ -139,38 +138,6 @@ function currentRecordingUrl(recording) {
   return `${recordingUrl(recording.object_path)}?v=${encodeURIComponent(recording.updated_at || recording.byte_size)}`;
 }
 
-function stopGroupPlayback() {
-  if (!activeGroupPlayback) return;
-  const { audio, button } = activeGroupPlayback;
-  activeGroupPlayback = null;
-  audio.pause();
-  button.disabled = !audioEnabled;
-}
-
-function playGroupRecording(button) {
-  if (!audioEnabled) return;
-  const groupId = Number(button.dataset.groupId);
-  const recording = recordings.get(groupId);
-  if (!recording) return;
-  stopRecordedVerse();
-  stopHoveredGroup();
-  stopGroupPlayback();
-  const audio = new Audio(currentRecordingUrl(recording));
-  activeGroupPlayback = { audio, button };
-  button.disabled = true;
-  audio.onended = () => {
-    if (activeGroupPlayback?.audio === audio) stopGroupPlayback();
-  };
-  const playFailed = () => {
-    if (activeGroupPlayback?.audio !== audio) return;
-    stopGroupPlayback();
-    status.textContent = 'The saved group recording could not be played.';
-  };
-  audio.onerror = playFailed;
-  audio.play().catch(playFailed);
-  status.textContent = `Playing recording for group ${groupId}.`;
-}
-
 function stopHoveredGroup() {
   if (hoveredGroupAudio) {
     hoveredGroupAudio.pause();
@@ -184,7 +151,6 @@ function stopHoveredGroup() {
 function playHoveredGroup(groupId) {
   if (!audioEnabled) return;
   if (hoveredGroupId === groupId) return;
-  if (activeGroupPlayback) return;
   stopRecordedVerse();
   stopHoveredGroup();
   const recording = recordings.get(groupId);
@@ -279,22 +245,6 @@ function renderVerses(texts) {
         }
         words.append(space);
       }
-
-      if (!scriptMode && highlight && wordIndex === highlight.end && recordings.has(highlight.id)) {
-        const controls = document.createElement('span');
-        controls.className = 'group-audio-controls';
-
-        const playButton = document.createElement('button');
-        playButton.type = 'button';
-        playButton.disabled = !audioEnabled;
-        playButton.className = 'group-audio-button play-group';
-        playButton.dataset.groupId = highlight.id;
-        playButton.textContent = '▶';
-        playButton.title = 'Play saved recording';
-        playButton.setAttribute('aria-label', `Play saved phrase in verse ${verseRef(number)}`);
-        controls.append(playButton);
-        words.append(controls);
-      }
     });
 
     row.append(button, words);
@@ -374,7 +324,6 @@ async function playRecordedVerse(button) {
   }
 
   stopRecordedVerse();
-  stopGroupPlayback();
   stopHoveredGroup();
   resetActiveVerse();
   const groups = highlights
@@ -486,11 +435,6 @@ async function playVerse(button) {
 }
 
 passage.addEventListener('click', event => {
-  const playButton = event.target.closest('.play-group');
-  if (playButton) {
-    playGroupRecording(playButton);
-    return;
-  }
   const button = event.target.closest('.verse-number');
   if (button && audioEnabled) playRecordedVerse(button);
 });
@@ -518,12 +462,11 @@ function setAudioEnabled(enabled) {
   audioEnabled = enabled;
   audioToggle.checked = enabled;
   if (!enabled) {
-    stopGroupPlayback();
     stopHoveredGroup();
     stopRecordedVerse();
     resetActiveVerse();
   }
-  passage.querySelectorAll('.verse-number, .play-group').forEach(button => {
+  passage.querySelectorAll('.verse-number').forEach(button => {
     button.disabled = !enabled;
   });
 }
