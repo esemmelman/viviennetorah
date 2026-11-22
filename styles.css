@@ -59,7 +59,7 @@ body::before {
   z-index: 20;
   top: 0;
   margin: -72px calc(50% - 50vw) 18px;
-  padding: 54px max(16px, calc((100vw - 980px) / 2)) 0;
+  padding: 54px max(16px, calc((100vw - 980px) / 2)) 14px;
   background: rgba(247, 239, 221, .96);
   box-shadow: 0 8px 20px rgba(72,57,31,.08);
   backdrop-filter: blur(8px);
@@ -81,7 +81,6 @@ body::before {
 }
 
 .passage-heading h1 {
-  max-width: calc(100% - 10rem);
   margin: 0;
   font-size: clamp(1rem, 2.2vw, 1.5rem);
   font-weight: 400;
@@ -262,11 +261,7 @@ body::before {
 }
 
 .group-audio-button:hover { color: white; background: var(--green); border-color: var(--green); }
-.group-audio-button.record-group { color: #a43f32; }
-.group-audio-button.recording { color: white; background: #a43f32; border-color: #a43f32; animation: recording-pulse 1.2s infinite; }
 .group-audio-button:disabled { opacity: .55; cursor: wait; }
-
-@keyframes recording-pulse { 50% { transform: scale(.88); opacity: .75; } }
 
 .script-mode .verse-row {
   font-family: "Stam Ashkenaz CLM", "Taamey Frank CLM", "Frank Ruhl Libre", serif;
@@ -331,17 +326,6 @@ select { margin-left: 6px; padding: 8px 12px; }
 }
 
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
-#record-button { padding: 10px 30px; border: 0; border-radius: 24px; background: var(--green); color: white; font: 600 1rem Arial, sans-serif; cursor: pointer; }
-#record-button[aria-pressed="true"] { background: #a63232; }
-#record-button:disabled { opacity: .6; cursor: wait; }
-#record-status { margin: 10px 0 0; min-height: 1.4em; color: var(--muted); font: .9rem Arial, sans-serif; }
-.passage-heading:has(#record-button[aria-pressed="true"]) + #record-status { display: none; }
 .recordings-card { margin: 24px 0; padding: 20px; background: var(--paper); border: 1px solid #d9c9a8; border-radius: 12px; }
 .recordings-card h2 { margin-top: 0; font-weight: 400; }
 .recordings-card p { color: var(--muted); font-size: .85rem; }
-.recordings-scroll { overflow-x: auto; }
-.recordings-table { width: 100%; border-collapse: collapse; text-align: left; font: .9rem Arial, sans-serif; }
-.recordings-table th, .recordings-table td { padding: 12px 8px; border-bottom: 1px solid #e4dac5; }
-.recordings-table input { width: 100%; min-width: 130px; padding: 8px; border: 1px solid #d9c9a8; border-radius: 5px; background: transparent; color: var(--ink); }
-.recordings-table audio { width: 240px; }
-.recordings-table button { padding: 8px 12px; border: 1px solid #c5a6a0; border-radius: 5px; background: transparent; color: #942f2f; cursor: pointer; }
